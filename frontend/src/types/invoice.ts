@@ -10,4 +10,18 @@ export interface Invoice {
   tax: number;
   total: number;
   status: InvoiceStatus;
+  createdAt?: string;
+  // Populated when backend includes relations
+  purchaseOrder?: {
+    id: string;
+    status: string;
+    vendorId: string;
+    vendor?: { id: string; name: string; email: string };
+    quotation?: {
+      id: string;
+      price: number;
+      deliveryDays: number;
+      rfq?: { id: string; title: string };
+    };
+  };
 }

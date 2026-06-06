@@ -1,4 +1,4 @@
-import { Navigate, Route, Routes } from "react-router-dom";
+import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import Navbar from "@/components/layout/Navbar";
 import Sidebar from "@/components/layout/Sidebar";
@@ -11,6 +11,8 @@ import Quotations from "@/pages/Quotations";
 import Approval from "@/pages/Approval";
 import PurchaseOrders from "@/pages/PurchaseOrders";
 import Invoices from "@/pages/Invoices";
+import Unauthorized from "@/pages/Unauthorized";
+import { canAccess, ROLE_HOME } from "@/utils/roleConfig";
 
 function AppLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -24,84 +26,122 @@ function AppLayout({ children }: { children: React.ReactNode }) {
   );
 }
 
-function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated } = useAuth();
+/** Redirects to login if not authenticated. Redirects to /unauthorized if role lacks access. */
+function RoleRoute({
+  path,
+  children,
+}: {
+  path: string;
+  children: React.ReactNode;
+}) {
+  const { isAuthenticated, role } = useAuth();
+
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
+
+  if (!canAccess(role, path)) {
+    return (
+      <AppLayout>
+        <Unauthorized />
+      </AppLayout>
+    );
+  }
+
   return <AppLayout>{children}</AppLayout>;
+}
+
+function RootRedirect() {
+  const { isAuthenticated, role } = useAuth();
+  const location = useLocation();
+
+  if (!isAuthenticated) return <Navigate to="/login" replace />;
+  if (location.pathname === "/" || location.pathname === "") {
+    return <Navigate to={role ? ROLE_HOME[role] : "/login"} replace />;
+  }
+  return <Navigate to="/unauthorized" replace />;
 }
 
 export default function AppRoutes() {
   return (
     <Routes>
       <Route path="/login" element={<Login />} />
+
       <Route
         path="/dashboard"
         element={
-          <ProtectedRoute>
+          <RoleRoute path="/dashboard">
             <Dashboard />
-          </ProtectedRoute>
+          </RoleRoute>
         }
       />
       <Route
         path="/vendors"
         element={
-          <ProtectedRoute>
+          <RoleRoute path="/vendors">
             <Vendors />
-          </ProtectedRoute>
+          </RoleRoute>
         }
       />
       <Route
         path="/rfqs"
         element={
-          <ProtectedRoute>
+          <RoleRoute path="/rfqs">
             <RFQs />
-          </ProtectedRoute>
+          </RoleRoute>
         }
       />
       <Route
         path="/vendor-portal"
         element={
-          <ProtectedRoute>
+          <RoleRoute path="/vendor-portal">
             <VendorPortal />
-          </ProtectedRoute>
+          </RoleRoute>
         }
       />
       <Route
         path="/quotations"
         element={
-          <ProtectedRoute>
+          <RoleRoute path="/quotations">
             <Quotations />
-          </ProtectedRoute>
+          </RoleRoute>
         }
       />
       <Route
         path="/approval"
         element={
-          <ProtectedRoute>
+          <RoleRoute path="/approval">
             <Approval />
-          </ProtectedRoute>
+          </RoleRoute>
         }
       />
       <Route
         path="/purchase-orders"
         element={
-          <ProtectedRoute>
+          <RoleRoute path="/purchase-orders">
             <PurchaseOrders />
-          </ProtectedRoute>
+          </RoleRoute>
         }
       />
       <Route
         path="/invoices"
         element={
-          <ProtectedRoute>
+          <RoleRoute path="/invoices">
             <Invoices />
-          </ProtectedRoute>
+          </RoleRoute>
         }
       />
-      <Route path="/" element={<Navigate to="/login" replace />} />
-      <Route path="*" element={<Navigate to="/login" replace />} />
+      <Route
+        path="/unauthorized"
+        element={
+          <AppLayout>
+            <Unauthorized />
+          </AppLayout>
+        }
+      />
+
+      <Route path="/" element={<RootRedirect />} />
+      <Route path="*" element={<RootRedirect />} />
     </Routes>
   );
 }

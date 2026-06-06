@@ -4,6 +4,7 @@ import {
   QuotationError,
   createQuotationRecord,
   getQuotationsForRfq,
+  getQuotationsForVendor,
   resolveVendorIdForRfq,
   selectQuotationWinner,
 } from "../services/quotation.service";
@@ -89,6 +90,21 @@ export async function getQuotationsByRfq(req: Request, res: Response): Promise<v
     }
 
     const quotations = await getQuotationsForRfq(rfqId);
+    res.json({ data: quotations });
+  } catch (error) {
+    handleError(error, res);
+  }
+}
+
+export async function getQuotationsByVendor(req: Request, res: Response): Promise<void> {
+  try {
+    const { vendorId } = req.params;
+    if (!vendorId) {
+      res.status(400).json({ message: "Vendor id is required" });
+      return;
+    }
+
+    const quotations = await getQuotationsForVendor(vendorId);
     res.json({ data: quotations });
   } catch (error) {
     handleError(error, res);

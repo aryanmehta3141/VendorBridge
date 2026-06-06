@@ -85,6 +85,21 @@ export async function getQuotationsForRfq(rfqId: string) {
   });
 }
 
+export async function getQuotationsForVendor(vendorId: string) {
+  return prisma.quotation.findMany({
+    where: { vendorId },
+    include: {
+      vendor: {
+        select: { id: true, name: true, email: true, category: true, status: true },
+      },
+      rfq: {
+        select: { id: true, title: true, description: true, status: true, deadline: true, quantity: true },
+      },
+    },
+    orderBy: { createdAt: "desc" },
+  });
+}
+
 export async function selectQuotationWinner(quotationId: string) {
   const quotation = await prisma.quotation.findUnique({
     where: { id: quotationId },

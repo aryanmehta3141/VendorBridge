@@ -1,10 +1,11 @@
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import {
   ROLE_LABELS,
   USER_ROLES,
   type UserRole,
 } from "@/utils/constants";
+import { ROLE_HOME } from "@/utils/roleConfig";
 
 const ROLES: UserRole[] = [
   USER_ROLES.ADMIN,
@@ -13,13 +14,20 @@ const ROLES: UserRole[] = [
   USER_ROLES.MANAGER,
 ];
 
+const ROLE_DESCRIPTIONS: Record<UserRole, string> = {
+  [USER_ROLES.ADMIN]: "Full access to all pages and actions",
+  [USER_ROLES.PROCUREMENT_OFFICER]: "Manage vendors, RFQs, quotations, POs and invoices",
+  [USER_ROLES.VENDOR]: "View assigned RFQs and submit quotations",
+  [USER_ROLES.MANAGER]: "Review and approve/reject quotations",
+};
+
 export default function Login() {
   const { login } = useAuth();
   const navigate = useNavigate();
 
   const handleRoleSelect = (role: UserRole) => {
     login(role);
-    navigate("/dashboard");
+    navigate(ROLE_HOME[role]);
   };
 
   return (
@@ -37,21 +45,16 @@ export default function Login() {
               key={role}
               type="button"
               onClick={() => handleRoleSelect(role)}
-              className="rounded-lg border bg-background px-4 py-3 text-left font-medium transition hover:border-primary hover:bg-primary/5"
+              className="rounded-lg border bg-background px-4 py-3 text-left transition hover:border-primary hover:bg-primary/5"
             >
-              {ROLE_LABELS[role]}
+              <p className="font-medium">{ROLE_LABELS[role]}</p>
+              <p className="mt-0.5 text-xs text-muted-foreground">{ROLE_DESCRIPTIONS[role]}</p>
             </button>
           ))}
         </div>
         <p className="mt-6 text-center text-xs text-muted-foreground">
           No password required. Role is stored in localStorage.
         </p>
-        <Link
-          to="/dashboard"
-          className="mt-4 block text-center text-sm text-primary hover:underline"
-        >
-          Skip to Dashboard
-        </Link>
       </div>
     </div>
   );

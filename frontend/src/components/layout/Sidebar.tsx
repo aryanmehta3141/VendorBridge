@@ -1,23 +1,17 @@
 import { NavLink, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
-
-const navItems = [
-  { to: "/dashboard", label: "Dashboard" },
-  { to: "/vendors", label: "Vendors" },
-  { to: "/rfqs", label: "RFQs" },
-  { to: "/vendor-portal", label: "Vendor Portal" },
-  { to: "/quotations", label: "Quotations" },
-  { to: "/approval", label: "Approval" },
-  { to: "/purchase-orders", label: "Purchase Orders" },
-  { to: "/invoices", label: "Invoices" },
-];
+import { useAuth } from "@/context/AuthContext";
+import { ROLE_NAV } from "@/utils/roleConfig";
 
 export default function Sidebar() {
   const location = useLocation();
+  const { role } = useAuth();
 
   if (location.pathname === "/login") {
     return null;
   }
+
+  const navItems = role ? ROLE_NAV[role] : [];
 
   return (
     <aside className="w-56 shrink-0 border-r bg-muted/20">

@@ -9,4 +9,23 @@ export interface PurchaseOrder {
   vendorId: string;
   status: PurchaseOrderStatus;
   createdAt?: string;
+  // Populated when backend includes relations
+  vendor?: {
+    id: string;
+    name: string;
+    email: string;
+    category?: string;
+  };
+  quotation?: {
+    id: string;
+    price: number;
+    deliveryDays: number;
+    status: string;
+    rfqId?: string;
+    rfq?: {
+      id: string;
+      title: string;
+      status: string;
+    };
+  };
 }

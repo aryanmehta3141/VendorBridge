@@ -1,5 +1,48 @@
 import { Request, Response } from "express";
 import { rfqService } from "../services/rfq.service";
+import { prisma } from "../prisma/prisma";
+
+/**
+ * Resolves a valid DB user id to use as createdById.
+ * Order of preference:
+ *  1. The provided id actually exists in the DB → use it.
+ *  2. Find any PROCUREMENT_OFFICER in the DB → use their id.
+ *  3. No users at all → upsert a demo PROCUREMENT_OFFICER and return their id.
+ */
+async function resolveCreatedById(requestedId: string): Promise<string> {
+  // 1. Check if the supplied id exists
+  const existing = await prisma.user.findUnique({ where: { id: requestedId } });
+  if (existing) {
+    console.log("[RFQ] createdById resolved from request:", existing.id);
+    return existing.id;
+  }
+
+  console.warn(
+    `[RFQ] createdById "${requestedId}" not found in DB — falling back to demo user`
+  );
+
+  // 2. Find any PROCUREMENT_OFFICER
+  const officer = await prisma.user.findFirst({
+    where: { role: "PROCUREMENT_OFFICER" },
+  });
+  if (officer) {
+    console.log("[RFQ] Using existing PROCUREMENT_OFFICER:", officer.id);
+    return officer.id;
+  }
+
+  // 3. Upsert demo user
+  const demo = await prisma.user.upsert({
+    where: { email: "demo@vendorbridge.com" },
+    update: {},
+    create: {
+      name: "Demo Procurement Officer",
+      email: "demo@vendorbridge.com",
+      role: "PROCUREMENT_OFFICER",
+    },
+  });
+  console.log("[RFQ] Created demo PROCUREMENT_OFFICER:", demo.id);
+  return demo.id;
+}
 
 export const getRfqs = async (_req: Request, res: Response) => {
   try {
@@ -45,12 +88,37 @@ export const createRfq = async (req: Request, res: Response) => {
       status,
     } = req.body;
 
-    if (!title || !description || !quantity || !deadline || !createdById) {
+    // Detailed request log for debugging
+    console.log("[RFQ createRfq] request body:", {
+      title,
+      description,
+      quantity,
+      deadline,
+      createdById,
+      assignedVendorId,
+    });
+
+    if (!title || !description || !quantity || !deadline) {
       return res.status(400).json({
         success: false,
-        message:
-          "title, description, quantity, deadline and createdById are required",
+        message: "title, description, quantity and deadline are required",
       });
+    }
+
+    // Resolve a valid createdById — auto-creates demo user if needed
+    const resolvedCreatedById = await resolveCreatedById(createdById ?? "");
+    console.log("[RFQ createRfq] resolved createdById:", resolvedCreatedById);
+
+    // Validate assignedVendorId if provided
+    if (assignedVendorId) {
+      const vendor = await prisma.vendor.findUnique({ where: { id: assignedVendorId } });
+      console.log("[RFQ createRfq] assignedVendorId lookup:", assignedVendorId, "→", vendor ? "found" : "NOT FOUND");
+      if (!vendor) {
+        return res.status(400).json({
+          success: false,
+          message: "Selected vendor does not exist",
+        });
+      }
     }
 
     const rfq = await rfqService.create({
@@ -58,14 +126,17 @@ export const createRfq = async (req: Request, res: Response) => {
       description,
       quantity: Number(quantity),
       deadline: new Date(deadline),
-      createdById,
+      createdById: resolvedCreatedById,
       assignedVendorId: assignedVendorId ?? null,
       status,
     });
 
+    console.log("[RFQ createRfq] created RFQ id:", rfq.id);
     return res.status(201).json({ success: true, data: rfq });
   } catch (error: any) {
-    console.error("createRfq error:", error);
+    console.error("[RFQ createRfq] error code:", error?.code);
+    console.error("[RFQ createRfq] error message:", error?.message);
+    console.error("[RFQ createRfq] full error:", error);
     if (error.code === "P2003") {
       return res.status(400).json({
         success: false,
