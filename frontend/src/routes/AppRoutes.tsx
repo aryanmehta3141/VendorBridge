@@ -16,11 +16,11 @@ import { canAccess, ROLE_HOME } from "@/utils/roleConfig";
 
 function AppLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="flex min-h-screen flex-col bg-background">
       <Navbar />
-      <div className="flex flex-1">
+      <div className="flex flex-1 relative">
         <Sidebar />
-        <main className="flex-1 p-6">{children}</main>
+        <main className="flex-1 min-w-0 p-6 animate-fade-in">{children}</main>
       </div>
     </div>
   );
