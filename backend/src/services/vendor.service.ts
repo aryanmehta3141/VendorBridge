@@ -1,15 +1,51 @@
-export async function getAllVendors(): Promise<never[]> {
-  return [];
+import { prisma } from "../prisma/prisma";
+
+export enum VendorStatus {
+  ACTIVE = "ACTIVE",
+  INACTIVE = "INACTIVE",
 }
 
-export async function createVendorRecord(_data: unknown): Promise<{ message: string }> {
-  return { message: "Vendor service - coming soon" };
-}
+export const vendorService = {
+  async getAll() {
+    return prisma.vendor.findMany({
+      orderBy: { createdAt: "desc" },
+    });
+  },
 
-export async function updateVendorRecord(_id: string, _data: unknown): Promise<{ message: string }> {
-  return { message: "Vendor service - coming soon" };
-}
+  async create(data: {
+    name: string;
+    email: string;
+    category: string;
+    status?: VendorStatus;
+  }) {
+    return prisma.vendor.create({
+      data: {
+        name: data.name,
+        email: data.email,
+        category: data.category,
+        status: data.status ?? VendorStatus.ACTIVE,
+      },
+    });
+  },
 
-export async function deleteVendorRecord(_id: string): Promise<{ message: string }> {
-  return { message: "Vendor service - coming soon" };
-}
+  async update(
+    id: string,
+    data: {
+      name?: string;
+      email?: string;
+      category?: string;
+      status?: VendorStatus;
+    }
+  ) {
+    return prisma.vendor.update({
+      where: { id },
+      data,
+    });
+  },
+
+  async remove(id: string) {
+    return prisma.vendor.delete({
+      where: { id },
+    });
+  },
+};
