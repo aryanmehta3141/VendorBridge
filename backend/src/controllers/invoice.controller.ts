@@ -1,9 +1,100 @@
 import { Request, Response } from "express";
+import { prisma } from "../prisma/prisma";
 
-export async function createInvoice(_req: Request, res: Response): Promise<void> {
-  res.status(201).json({ message: "Create invoice - coming soon" });
+export async function createInvoice(
+  req: Request,
+  res: Response
+): Promise<void> {
+
+  try {
+
+    const { poId, amount } = req.body;
+
+
+    const tax = amount * 0.18;
+
+    const total = amount + tax;
+
+
+    const invoice =
+      await prisma.invoice.create({
+
+        data: {
+
+          poId,
+
+          amount,
+
+          tax,
+
+          total,
+
+          status: "INVOICE_CREATED"
+
+        }
+
+      });
+
+
+
+    res.status(201).json({
+
+      message: "Invoice created successfully",
+
+      data: invoice
+
+    });
+
+
+
+  } catch (error) {
+
+
+    res.status(500).json({
+
+      message: "Failed to create invoice"
+
+    });
+
+
+  }
+
 }
 
-export async function getInvoices(_req: Request, res: Response): Promise<void> {
-  res.json({ message: "Invoices endpoint - coming soon", data: [] });
+export async function getInvoices(
+  _req: Request,
+  res: Response
+): Promise<void> {
+
+
+  try {
+
+
+    const invoices =
+      await prisma.invoice.findMany();
+
+
+
+    res.json({
+
+      data: invoices
+
+    });
+
+
+
+  } catch (error) {
+
+
+
+    res.status(500).json({
+
+      message: "Failed to fetch invoices"
+
+    });
+
+
+
+  }
+
 }
