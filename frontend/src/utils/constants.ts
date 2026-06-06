@@ -1,0 +1,54 @@
+export const USER_ROLES = {
+  ADMIN: "ADMIN",
+  PROCUREMENT_OFFICER: "PROCUREMENT_OFFICER",
+  VENDOR: "VENDOR",
+  MANAGER: "MANAGER",
+} as const;
+
+export type UserRole = (typeof USER_ROLES)[keyof typeof USER_ROLES];
+
+export const RFQ_STATUS = {
+  RFQ_CREATED: "RFQ_CREATED",
+  VENDOR_ASSIGNED: "VENDOR_ASSIGNED",
+  QUOTATION_RECEIVED: "QUOTATION_RECEIVED",
+  WINNER_SELECTED: "WINNER_SELECTED",
+  PENDING_APPROVAL: "PENDING_APPROVAL",
+  APPROVED: "APPROVED",
+  REJECTED: "REJECTED",
+  PO_CREATED: "PO_CREATED",
+  INVOICE_CREATED: "INVOICE_CREATED",
+} as const;
+
+export const QUOTATION_STATUS = {
+  QUOTATION_SUBMITTED: "QUOTATION_SUBMITTED",
+  PENDING_APPROVAL: "PENDING_APPROVAL",
+  APPROVED: "APPROVED",
+  REJECTED: "REJECTED",
+} as const;
+
+export const PO_STATUS = {
+  PO_CREATED: "PO_CREATED",
+} as const;
+
+export const INVOICE_STATUS = {
+  INVOICE_CREATED: "INVOICE_CREATED",
+} as const;
+
+export const VENDOR_STATUS = {
+  ACTIVE: "ACTIVE",
+  INACTIVE: "INACTIVE",
+} as const;
+
+export const ROLE_LABELS: Record<UserRole, string> = {
+  ADMIN: "Admin",
+  PROCUREMENT_OFFICER: "Procurement Officer",
+  VENDOR: "Vendor",
+  MANAGER: "Manager",
+};
+
+export const STORAGE_KEYS = {
+  ROLE: "role",
+} as const;
+
+export const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL ?? "/api";

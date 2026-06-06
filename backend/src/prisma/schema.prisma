@@ -1,0 +1,131 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+  PROCUREMENT_OFFICER
+  VENDOR
+  MANAGER
+}
+
+enum VendorStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum RfqStatus {
+  RFQ_CREATED
+  VENDOR_ASSIGNED
+  QUOTATION_RECEIVED
+  WINNER_SELECTED
+  PENDING_APPROVAL
+  APPROVED
+  REJECTED
+  PO_CREATED
+  INVOICE_CREATED
+}
+
+enum QuotationStatus {
+  QUOTATION_SUBMITTED
+  PENDING_APPROVAL
+  APPROVED
+  REJECTED
+}
+
+enum PurchaseOrderStatus {
+  PO_CREATED
+}
+
+enum InvoiceStatus {
+  INVOICE_CREATED
+}
+
+model User {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  role      UserRole
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  rfqsCreated Rfq[] @relation("RfqCreatedBy")
+}
+
+model Vendor {
+  id        String       @id @default(cuid())
+  name      String
+  email     String       @unique
+  category  String
+  status    VendorStatus @default(ACTIVE)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  assignedRfqs    Rfq[]            @relation("AssignedVendor")
+  quotations      Quotation[]
+  purchaseOrders  PurchaseOrder[]
+}
+
+model Rfq {
+  id               String    @id @default(cuid())
+  title            String
+  description      String
+  quantity         Int
+  deadline         DateTime
+  status           RfqStatus @default(RFQ_CREATED)
+  createdById      String
+  assignedVendorId String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  createdBy      User        @relation("RfqCreatedBy", fields: [createdById], references: [id])
+  assignedVendor Vendor?     @relation("AssignedVendor", fields: [assignedVendorId], references: [id])
+  quotations     Quotation[]
+}
+
+model Quotation {
+  id           String          @id @default(cuid())
+  rfqId        String
+  vendorId     String
+  price        Float
+  deliveryDays Int
+  comments     String?
+  status       QuotationStatus @default(QUOTATION_SUBMITTED)
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+
+  rfq           Rfq            @relation(fields: [rfqId], references: [id])
+  vendor        Vendor         @relation(fields: [vendorId], references: [id])
+  purchaseOrder PurchaseOrder?
+}
+
+model PurchaseOrder {
+  id          String              @id @default(cuid())
+  quotationId String              @unique
+  vendorId    String
+  status      PurchaseOrderStatus @default(PO_CREATED)
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+
+  quotation Quotation @relation(fields: [quotationId], references: [id])
+  vendor    Vendor    @relation(fields: [vendorId], references: [id])
+  invoice   Invoice?
+}
+
+model Invoice {
+  id        String        @id @default(cuid())
+  poId      String        @unique
+  amount    Float
+  tax       Float
+  total     Float
+  status    InvoiceStatus @default(INVOICE_CREATED)
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  purchaseOrder PurchaseOrder @relation(fields: [poId], references: [id])
+}
