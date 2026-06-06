@@ -1,11 +1,6 @@
+import { RFQ_STATUS } from "../constants/status";
 import { prisma } from "../prisma/prisma";
-
-export const RfqStatus = {
-  RFQ_CREATED: "RFQ_CREATED",
-  VENDOR_ASSIGNED: "VENDOR_ASSIGNED",
-} as const;
-
-export type RfqStatus = (typeof RfqStatus)[keyof typeof RfqStatus];
+import type { RfqStatus } from "@prisma/client";
 
 const rfqInclude = {
   createdBy: {
@@ -62,9 +57,52 @@ export const rfqService = {
         status:
           data.status ??
           (data.assignedVendorId
-            ? RfqStatus.VENDOR_ASSIGNED
-            : RfqStatus.RFQ_CREATED),
+            ? RFQ_STATUS.VENDOR_ASSIGNED
+            : RFQ_STATUS.RFQ_CREATED),
       },
+      include: rfqInclude,
+    });
+  },
+
+  async update(
+    id: string,
+    data: {
+      title?: string;
+      description?: string;
+      quantity?: number;
+      deadline?: Date;
+      assignedVendorId?: string | null;
+    }
+  ) {
+    const updateData: {
+      title?: string;
+      description?: string;
+      quantity?: number;
+      deadline?: Date;
+      assignedVendorId?: string | null;
+      status?: RfqStatus;
+    } = {};
+
+    if (data.title !== undefined) {
+      updateData.title = data.title;
+    }
+    if (data.description !== undefined) {
+      updateData.description = data.description;
+    }
+    if (data.quantity !== undefined) {
+      updateData.quantity = data.quantity;
+    }
+    if (data.deadline !== undefined) {
+      updateData.deadline = data.deadline;
+    }
+    if (data.assignedVendorId) {
+      updateData.assignedVendorId = data.assignedVendorId;
+      updateData.status = RFQ_STATUS.VENDOR_ASSIGNED;
+    }
+
+    return prisma.rfq.update({
+      where: { id },
+      data: updateData,
       include: rfqInclude,
     });
   },

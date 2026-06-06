@@ -1,9 +1,6 @@
+import { VENDOR_STATUS } from "../constants/status";
 import { prisma } from "../prisma/prisma";
-
-export enum VendorStatus {
-  ACTIVE = "ACTIVE",
-  INACTIVE = "INACTIVE",
-}
+import type { VendorStatus } from "@prisma/client";
 
 export const vendorService = {
   async getAll() {
@@ -23,7 +20,7 @@ export const vendorService = {
         name: data.name,
         email: data.email,
         category: data.category,
-        status: data.status ?? VendorStatus.ACTIVE,
+        status: data.status ?? VENDOR_STATUS.ACTIVE,
       },
     });
   },

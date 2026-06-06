@@ -77,3 +77,77 @@ export const createRfq = async (req: Request, res: Response) => {
       .json({ success: false, message: "Failed to create RFQ" });
   }
 };
+
+export const updateRfq = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { title, description, quantity, deadline, assignedVendorId } =
+      req.body;
+
+    const hasUpdate =
+      title !== undefined ||
+      description !== undefined ||
+      quantity !== undefined ||
+      deadline !== undefined ||
+      assignedVendorId !== undefined;
+
+    if (!hasUpdate) {
+      return res.status(400).json({
+        success: false,
+        message: "At least one field is required to update",
+      });
+    }
+
+    if (quantity !== undefined) {
+      const parsedQuantity = Number(quantity);
+      if (
+        Number.isNaN(parsedQuantity) ||
+        parsedQuantity <= 0 ||
+        !Number.isInteger(parsedQuantity)
+      ) {
+        return res.status(400).json({
+          success: false,
+          message: "quantity must be a positive integer",
+        });
+      }
+    }
+
+    if (deadline !== undefined) {
+      const parsedDeadline = new Date(deadline);
+      if (Number.isNaN(parsedDeadline.getTime())) {
+        return res.status(400).json({
+          success: false,
+          message: "deadline must be a valid date",
+        });
+      }
+    }
+
+    const rfq = await rfqService.update(id, {
+      title,
+      description,
+      quantity:
+        quantity !== undefined ? Number(quantity) : undefined,
+      deadline:
+        deadline !== undefined ? new Date(deadline) : undefined,
+      assignedVendorId,
+    });
+
+    return res.status(200).json({ success: true, data: rfq });
+  } catch (error: any) {
+    console.error("updateRfq error:", error);
+    if (error.code === "P2025") {
+      return res
+        .status(404)
+        .json({ success: false, message: "RFQ not found" });
+    }
+    if (error.code === "P2003") {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid assignedVendorId reference",
+      });
+    }
+    return res
+      .status(500)
+      .json({ success: false, message: "Failed to update RFQ" });
+  }
+};
